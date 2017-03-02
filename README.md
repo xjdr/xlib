@@ -4,7 +4,8 @@ xlib
 xlib is a collection of tools for building high performance, modern c++
 applications.
 
-This system has only been tested with clang 3.9. GCC 6 should work as well.
+Generally there are no dependencies between headers. That is not a guarantee.
+This system has only been tested with clang 3.9.
 
 # How to use
-xlib is a header only library set (mostly).
+xlib is a header only library set. Just include the tools you need.

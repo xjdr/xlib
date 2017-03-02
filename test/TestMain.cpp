@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include "ChannelTest.cpp"
 #include "HttpTest.cpp"
 #include "LogTest.cpp"
 #include "BufTest.cpp"

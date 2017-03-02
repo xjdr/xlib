@@ -16,10 +16,10 @@
  *
  */
 
-static void escape(void *p) {
-  asm volatile("" : : "g"(p) :"memory");
-}
+// static void escape(void *p) {
+//   asm volatile("" : : "g"(p) :"memory");
+// }
 
-static void clobber() {
-  asm volatile("" : : :"memory");
-}
+// static void clobber() {
+//   asm volatile("" : : :"memory");
+// }

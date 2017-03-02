@@ -58,20 +58,20 @@ struct http_msg {
 };
 
 void parse_uri(char *uri) {
-  int i = 0;
-  for(auto c : uri) {
-    switch(c) {
+  // int i = 0;
+  // for(auto c : uri) {
+  //   switch(c) {
 
-    case '/':
-      break;
+  //   case '/':
+  //     break;
 
-    case '?':
-      break;
+  //   case '?':
+  //     break;
 
-    case '#':
-      break;
-    }
-  }
+  //   case '#':
+  //     break;
+  //   }
+  // }
 }
 
 void parse_headers(http_msg *msg) {
