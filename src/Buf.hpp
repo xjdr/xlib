@@ -10,7 +10,7 @@
  * applications. The buffer allows you to read and write and the
  * same time. This is specifically useful for things like chunked
  * http messages. Calling the Buf constructor directly is depricated
- * and you should build buffers from the static Buf::create(_size)
+ * and you should build buffers from the static Buf::create(_size_)
  * method.
  *
  *
@@ -19,7 +19,7 @@
  * |                   |     (CONTENT)    |                  |
  * +-------------------+------------------+------------------+
  * |                   |                  |                  |
- * 0        <=      r_index     <=     w_index     <=    capacity
+ * 0        <=      r_index     <=     w_index     <=     capacity
  *
  */
 
@@ -57,6 +57,10 @@ class Buf {
     r_index = 0;
   }
 
+  char* array() {
+    return data;
+  }
+
   int get(char *buf, size_t len) {
     if (r_index >= w_index) return -1;
     if ((r_index + len) > capacity) return -2;
@@ -81,6 +85,14 @@ class Buf {
     return mal;
   }
 
+  int get_capacity() {
+    return capacity;
+  }
+
+  int remaining_capacity() {
+    return capacity - w_index;
+  }
+
   ~Buf() {
     if (mal) free(memory);
     if (!mal) delete [] (char *)memory;
@@ -89,13 +101,11 @@ class Buf {
 
  private:
   void *memory = nullptr;
+  char *data;
 
   bool mal = false;
   int capacity;
   int r_index = 0;
   int w_index = 0;
-
-  char *data;
-
 
 };

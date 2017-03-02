@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 
+#include "HttpTest.cpp"
+#include "LogTest.cpp"
 #include "BufTest.cpp"
 #include "ScopeGuardTest.cpp"
 
