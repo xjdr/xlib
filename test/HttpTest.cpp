@@ -12,6 +12,35 @@
 #include <string>
 
 
+TEST(HttpTest, TestBufCurlGET) {
+
+  char * req =(char *) "GET /test HTTP/1.1\r\n"
+    "User-Agent: curl/7.18.0 (i486-pc-linux-gnu) libcurl/7.18.0 OpenSSL/0.9.8g zlib/1.2.3.3 libidn/1.1\r\n"
+    "Host: 0.0.0.0=5000\r\n"
+    "Accept: */*\r\n"
+    "\r\n";
+
+  auto b = Buf::create(512);
+  b->put(req, strlen(req));
+
+  http_msg msg;
+  parse_msg(std::move(b), &msg);
+
+  EXPECT_EQ(Methods::GET, msg.getMethod());
+  EXPECT_EQ(Versions::ONE, msg.getVersion());
+
+  msg.uri[5] = '\0';
+  ASSERT_STREQ("/test", msg.uri);
+
+  ASSERT_STREQ("User-Agent", msg.headers[0].key);
+  ASSERT_STREQ("Host", msg.headers[1].key);
+  ASSERT_STREQ("0.0.0.0=5000", msg.headers[1].val);
+  ASSERT_STREQ("Accept", msg.headers[2].key);
+
+}
+
+
+
 TEST(HttpTest, TestCurlGET) {
 
   char * req =(char *) "GET /test HTTP/1.1\r\n"

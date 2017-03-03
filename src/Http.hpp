@@ -10,9 +10,10 @@
 #include <stdlib.h> // uint8_t
 #include <string.h> // memcpy
 
-# include <stdio.h>
+#include "Buf.hpp"
+#include "Preprocessor.hpp"
 
-// Cheap high performance ordere map
+// Cheap high performance ordered map (kinda)
 struct Map {
   char key[36];
   char val[36];
@@ -21,7 +22,6 @@ struct Map {
 // Need to add this to the parser
 enum class Versions { ZERO, ONE, TWO };
 enum class Methods  { GET, POST, PUT, DELETE };
-//enum class Headers  { ContentLength, Connection, KeepAlive, TransferEncoding };
 
 struct http_msg {
 
@@ -78,7 +78,6 @@ void parse_headers(http_msg *msg) {
   int i = 0;
 
   do {
-    //    printf("------ Char %c\n", msg->headers[i].key[0]);
     switch(msg->headers[i].key[0]) {
     case 'C':
       switch(msg->headers[i].key[3]) {
@@ -113,9 +112,7 @@ void parse_msg(const char *req, http_msg *msg) {
   int i = 0;
 
   do {
-    char c = req[i];
-
-    switch(c) {
+    switch(req[i]) {
 
     case ' ':
       switch(msg->state) {
@@ -146,14 +143,12 @@ void parse_msg(const char *req, http_msg *msg) {
        break;
 
     case '\n':
-      if (req[i-2] == '\n') msg->state = 5;
+      if (UNLIKELY(req[i-2] == '\n')) msg->state = 5;
       switch(msg->state) {
       case 2:
 	// HTTP Version
 	if (i - msg->cursor > 0) {
 	  memcpy(&msg->version, &req[msg->cursor + 1], i - msg->cursor - 2);
-	  // @Temporary I think this is only required for priting
-	  //	  msg->version[ i - msg->cursor] = '\0';
 	  msg->state = 3;
 	  msg->cursor = i;
 	  break;
@@ -177,15 +172,81 @@ void parse_msg(const char *req, http_msg *msg) {
   msg->cursor = msg->cursor + 3; // This is a constant
 
   parse_headers(msg);
-  // GET should not have a body
-  // Maybe we change this ...
-  // if (msg->method[0] == 'P') //  || msg->method[0] == 'D') // Should delete be allowed a body?
-  //   for (int i = 0 ; i < msg->header_count ; i++) {
-  //     if(( msg->headers[i].key[0] == 'c' ||  msg->headers[i].key[0] == 'C') && (msg->headers[i].key[8] == 'l' || msg->headers[i].key[8] == 'L' )) {
-  //     msg->content_length = atoi(msg->headers[i].val);
-  //     break;
-  //   }
-  // }
 
   memcpy(msg->body, &req[msg->cursor], msg->content_length);
+}
+
+void parse_msg(std::unique_ptr<Buf> req, http_msg *msg) {
+  int i = 0;
+
+  do {
+    switch(req->get()) {
+
+    case ' ':
+      switch(msg->state) {
+      case 0:
+	// HTTP Method
+	//	memcpy(&msg->method, &req[msg->cursor], i - msg->cursor);
+	req->get(msg->method, msg->cursor, i - msg->cursor);
+	msg->state = 1;
+	msg->cursor = i;
+	break;
+
+      case 1:
+	// URI
+	//	memcpy(&msg->uri, &req[msg->cursor + 1],  i - msg->cursor - 1);
+	req->get(msg->uri, msg->cursor + 1, i - msg->cursor -1);
+	msg->state = 2;
+	msg->cursor = i;
+	parse_uri(msg->uri);
+	break;
+
+      case 3:
+	// Headers Start
+	msg->headers[msg->header_count] = {};
+	//	memcpy(&msg->headers[msg->header_count].key, &req[msg->cursor + 1],  i - msg->cursor - 2);
+	req->get(msg->headers[msg->header_count].key, msg->cursor + 1, i - msg->cursor - 2);
+	msg->state = 4;
+	msg->cursor = i;
+	break;
+      }
+
+       break;
+
+    case '\n':
+      //TODO(JR): Add get index to buffer
+      if (req->get(i-2) == '\n') msg->state = 5;
+      switch(msg->state) {
+      case 2:
+	// HTTP Version
+	if (i - msg->cursor > 0) {
+	  //	  memcpy(&msg->version, &req[msg->cursor + 1], i - msg->cursor - 2);
+	  req->get(msg->version, msg->cursor + 1, i - msg->cursor - 2);
+	  msg->state = 3;
+	  msg->cursor = i;
+	  break;
+	}
+
+      case 4:
+	// Headers end
+	//	memcpy(&msg->headers[msg->header_count].val, &req[msg->cursor + 1],  i - msg->cursor - 2);
+	req->get(msg->headers[msg->header_count].val, msg->cursor + 1, i - msg->cursor - 2);
+	msg->header_count++;
+	msg->state = 3;
+	msg->cursor = i;
+	break;
+      }
+
+      break;
+    }
+
+    i++;
+  } while(msg->state < 5);
+
+  msg->cursor = msg->cursor + 3; // This is a constant
+
+  parse_headers(msg);
+
+  //  memcpy(msg->body, &req[msg->cursor], msg->content_length);
+  req->get(msg->body, msg->cursor, msg->content_length);
 }

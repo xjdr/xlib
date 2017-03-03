@@ -9,14 +9,18 @@
 
 #include <stdlib.h> // size_t
 
+#include <atomic>
+
 #include "Buf.hpp"
 
-#include <atomic>
+#define CHANNEL_UNDERFLOW -1
+#define CHANNEL_OVERFLOW -2
 
 class Channel {
  public:
   Channel(int size) {
     buf = Buf::create(size);
+    sizes = new int[size * sizeof(int)];
   }
 
   static std::shared_ptr<Channel> create(int size) {
@@ -31,15 +35,27 @@ class Channel {
     w_index++;
   }
 
-  void get(char *buf_) {
-    buf->get(buf_, sizes[r_index.load()]);
+  int get(char *buf_) {
+    int resp = buf->get(buf_, sizes[r_index.load()]);
 
     r_index++;
+
+    return resp;
+  }
+
+  void clear() {
+    buf->clear();
+    w_index.store(0);
+    r_index.store(0);
+  }
+
+  ~Channel() {
+    delete[] sizes;
   }
 
  private:
+  int *sizes;
   std::unique_ptr<Buf> buf;
-  int sizes[36];
   std::atomic<int> w_index = {0};
   std::atomic<int> r_index = {0};
 
@@ -53,8 +69,8 @@ void operator<<(std::shared_ptr<Channel> &c, T buf) {
 
 
 template <typename T>
-void operator>>(std::shared_ptr<Channel> &c, T buf) {
-  c->get((char *)buf);
+int operator>>(std::shared_ptr<Channel> &c, T buf) {
+  return c->get((char *)buf);
 }
 
 
@@ -65,6 +81,6 @@ void operator<<(Channel &c, T buf) {
 
 
 template <typename T>
-void operator>>(Channel &c, T buf) {
-  c.get((char *)buf);
+int operator>>(Channel &c, T buf) {
+  return c.get((char *)buf);
 }

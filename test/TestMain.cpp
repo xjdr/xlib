@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include "EventLoopTest.cpp"
 #include "ChannelTest.cpp"
 #include "HttpTest.cpp"
 #include "LogTest.cpp"

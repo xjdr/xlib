@@ -29,7 +29,12 @@
 
 #include <memory>
 
+#include "Preprocessor.hpp"
+
 #define MAX_STACK 1024 * 1024
+
+#define BUF_UNDERFLOW -1
+#define BUF_OVERFLOW -2
 
 class Buf {
  public:
@@ -61,9 +66,24 @@ class Buf {
     return data;
   }
 
+  char get() {
+    if (UNLIKELY(r_index >= w_index)) return -1;
+    if (UNLIKELY((r_index + 1) > capacity)) return -2;
+
+    return data[r_index++];
+  }
+
+  char get(size_t index) {
+    if (UNLIKELY(index >= w_index)) return -1;
+    if (UNLIKELY((index + 1) > capacity)) return -2;
+
+    return data[index];
+  }
+
+
   int get(char *buf, size_t len) {
-    if (r_index >= w_index) return -1;
-    if ((r_index + len) > capacity) return -2;
+    if (UNLIKELY(r_index >= w_index)) return -1;
+    if (UNLIKELY((r_index + len) > capacity)) return -2;
 
     memcpy(buf, &data[r_index], len);
     r_index = r_index + (int) len;
@@ -71,9 +91,25 @@ class Buf {
     return 0;
   }
 
+  int get(char *buf, size_t from, size_t len) {
+    if (UNLIKELY(from >= w_index)) return -1;
+    if (UNLIKELY((from + len) > capacity)) return -2;
+
+    memcpy(buf, &data[from], len);
+
+    // This operation should not incriment the r_index as this
+    // is direct access which assumes the caller knows the index
+    // of the desired data. This may be a terrible idea, but we
+    // will see how it goes and make changes as necessary.
+    //
+    //    r_index = r_index + (int) len;
+
+    return 0;
+  }
+
   int put(char *buf, size_t len) {
-    if (r_index > w_index) return -1;
-    if (w_index + len > capacity) return -2;
+    if (UNLIKELY(r_index > w_index)) return -1;
+    if (UNLIKELY(w_index + len > capacity)) return -2;
 
     memcpy(&data[w_index], buf, len);
     w_index = w_index + (int) len;
@@ -95,7 +131,7 @@ class Buf {
 
   ~Buf() {
     if (mal) free(memory);
-    if (!mal) delete [] (char *)memory;
+    if (!mal) delete[] (char *)memory;
   }
 
 
