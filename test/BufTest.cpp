@@ -7,9 +7,10 @@
 
 #include <gtest/gtest.h>
 
+#include <memory>
+
 #include "../src/Buf.hpp"
 
-#include <memory>
 
 TEST(BufTest, TestReadEmpty) {
   int size = 1024;

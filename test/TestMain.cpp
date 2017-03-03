@@ -2,6 +2,7 @@
 
 #include "EventLoopTest.cpp"
 #include "ChannelTest.cpp"
+#include "BufferedChannelTest.cpp"
 #include "HttpTest.cpp"
 #include "LogTest.cpp"
 #include "BufTest.cpp"

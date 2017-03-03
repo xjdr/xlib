@@ -27,7 +27,7 @@
 
 #include <stdlib.h> //size_t
 
-#include <memory>
+#include <memory>   // uniuqe_ptr
 
 #include "Preprocessor.hpp"
 
@@ -67,23 +67,23 @@ class Buf {
   }
 
   char get() {
-    if (UNLIKELY(r_index >= w_index)) return -1;
-    if (UNLIKELY((r_index + 1) > capacity)) return -2;
+    if (UNLIKELY(r_index >= w_index)) return BUF_UNDERFLOW;
+    if (UNLIKELY((r_index + 1) > capacity)) return BUF_OVERFLOW;
 
     return data[r_index++];
   }
 
   char get(size_t index) {
-    if (UNLIKELY(index >= w_index)) return -1;
-    if (UNLIKELY((index + 1) > capacity)) return -2;
+    if (UNLIKELY(index >= w_index)) return BUF_UNDERFLOW;
+    if (UNLIKELY((index + 1) > capacity)) return BUF_OVERFLOW;
 
     return data[index];
   }
 
 
   int get(char *buf, size_t len) {
-    if (UNLIKELY(r_index >= w_index)) return -1;
-    if (UNLIKELY((r_index + len) > capacity)) return -2;
+    if (UNLIKELY(r_index >= w_index)) return BUF_UNDERFLOW;
+    if (UNLIKELY((r_index + len) > capacity)) return BUF_OVERFLOW;
 
     memcpy(buf, &data[r_index], len);
     r_index = r_index + (int) len;
@@ -92,8 +92,8 @@ class Buf {
   }
 
   int get(char *buf, size_t from, size_t len) {
-    if (UNLIKELY(from >= w_index)) return -1;
-    if (UNLIKELY((from + len) > capacity)) return -2;
+    if (UNLIKELY(from >= w_index)) return BUF_UNDERFLOW;
+    if (UNLIKELY((from + len) > capacity)) return BUF_OVERFLOW;
 
     memcpy(buf, &data[from], len);
 
@@ -108,8 +108,8 @@ class Buf {
   }
 
   int put(char *buf, size_t len) {
-    if (UNLIKELY(r_index > w_index)) return -1;
-    if (UNLIKELY(w_index + len > capacity)) return -2;
+    if (UNLIKELY(r_index > w_index)) return BUF_UNDERFLOW;
+    if (UNLIKELY(w_index + len > capacity)) return BUF_OVERFLOW;
 
     memcpy(&data[w_index], buf, len);
     w_index = w_index + (int) len;

@@ -7,80 +7,58 @@
 
 #pragma once
 
-#include <stdlib.h> // size_t
+#include <memory> //shared_ptr
 
-#include <atomic>
+#include "Preprocessor.hpp"
 
-#include "Buf.hpp"
+#define CHANNEL_EMPTY -1
+#define CHANNEL_FULL -2
 
-#define CHANNEL_UNDERFLOW -1
-#define CHANNEL_OVERFLOW -2
-
+template <typename T>
 class Channel {
  public:
-  Channel(int size) {
-    buf = Buf::create(size);
-    sizes = new int[size * sizeof(int)];
+  Channel() {
   }
 
-  static std::shared_ptr<Channel> create(int size) {
-    return std::make_shared<Channel>(size);
+  static std::shared_ptr<Channel<T>> mk() {
+    return std::make_shared<Channel<T>>();
   }
 
-  void put(char *buf_, size_t size) {
-    size_t s = size;
-    sizes[w_index.load()] = s;
-    buf->put(buf_, s);
+  int put(T msg) {
+    if (UNLIKELY(b == e)) return CHANNEL_FULL;
 
-    w_index++;
+    data = std::move(msg);
+
+    b = sizeof(data);
+    assert(b == e);
+
+    return 0;
   }
 
-  int get(char *buf_) {
-    int resp = buf->get(buf_, sizes[r_index.load()]);
+  int get(T &msg) {
+    if (b != e) return CHANNEL_EMPTY;
 
-    r_index++;
+    msg = std::move(data);
+    b = 0;
 
-    return resp;
-  }
-
-  void clear() {
-    buf->clear();
-    w_index.store(0);
-    r_index.store(0);
+    return 0;
   }
 
   ~Channel() {
-    delete[] sizes;
   }
 
  private:
-  int *sizes;
-  std::unique_ptr<Buf> buf;
-  std::atomic<int> w_index = {0};
-  std::atomic<int> r_index = {0};
-
+  T data;
+  size_t b = 0;
+  size_t e = sizeof(T);
 };
 
-
 template <typename T>
-void operator<<(std::shared_ptr<Channel> &c, T buf) {
-  c->put((char *)buf, strlen((char *)buf));
+int operator<<(std::shared_ptr<Channel<T>> &c, T msg) {
+  return c->put(msg);
 }
 
-
 template <typename T>
-int operator>>(std::shared_ptr<Channel> &c, T buf) {
-  return c->get((char *)buf);
-}
-
-
-template <typename T>
-void operator<<(Channel &c, T buf) {
-  c.put((char *)buf, strlen((char *)buf));
-}
-
-
-template <typename T>
-int operator>>(Channel &c, T buf) {
-  return c.get((char *)buf);
+int operator>>(std::shared_ptr<Channel<T>> &c, T &msg) {
+  return c->get(msg);
 }
