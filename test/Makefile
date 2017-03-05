@@ -10,7 +10,10 @@ CFLAGS = -O3 -std=c++14 -stdlib=libc++ \
 GTEST = $(HOME)/lib64/libgtest.a
 LIBEVENT = $(HOME)/lib64/libevent.a
 
-all: test
+all: emacs
 
 test:
 	$(CC) $(CFLAGS) TestMain.cpp $(GTEST) $(LIBEVENT) -o test ; ./test --gtest_color=yes ; rm test
+
+emacs:
+	$(CC) $(CFLAGS) TestMain.cpp $(GTEST) $(LIBEVENT) -o test ; ./test ; rm test

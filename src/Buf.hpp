@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include <stdlib.h> //size_t
+#include <stdlib.h> // memcpy, size_t
 
 #include <memory>   // uniuqe_ptr
 
